@@ -24,24 +24,42 @@ This exercise involves the UN data set from `alr3` package. Install `alr3` and t
 
 0.  Preliminary read in the data.  After testing, modify the code chunk so that output, messages and warnings are suppressed.  *Exclude text from final*
 
-```{r data}
+```{r data, echo = FALSE, include = FALSE}
 library(alr3)
+library(car)
+library(dplyr)
+library(knitr)
+library(GGally)
+library(ggplot2)
+
 data(UN3, package="alr3")
 help(UN3) 
-library(car)
 ```
 
 
 1. Create a summary of the data.  How many variables have missing data?  Which are quantitative and which are qualtitative?
 
 ```{r}
+# quick summary - examine data types/structure
+str(UN3)
 
+# check for missing data
+missing_data = is.na(UN3)
+summary(missing_data)
+```
+
+```{r}
+summary(UN3)
 ```
 
 2. What is the mean and standard deviation of each quantitative predictor?  Provide in a nicely formatted table.
 
 ```{r}
-
+UN3_num = select(UN3,c(Change,PPgdp,Frate,Pop,Fertility,Purban))
+UN3_mean = apply(UN3_num,2,mean,na.rm=TRUE)
+UN3_sd = apply(UN3_num,2,sd,na.rm=TRUE)
+UN3_summary = data.frame(mean = UN3_mean, sd= UN3_sd)
+kable(UN3_summary,"markdown",c(2,2),row.names = TRUE)
 ```
 
 
@@ -49,8 +67,13 @@ library(car)
 highlighting the relationships among the predictors. Comment
 on your findings regarding trying to predict `ModernC` from the other variables.  Are there potential outliers, nonlinear relationships or transformations that appear to be needed based on your graphical EDA?
 
-```{r}
+```{r, echo = FALSE}
+# initial EDA
+ggpairs(UN3)
+```
 
+```{r}
+ggplot(data = UN3, aes(x = Frate, y = ModernC)) + geom_point(na.rm = TRUE) + labs(title = "Contraceptive Use vs. Adult Female Economic Activity", caption = "% females using modern contraception plotted against % females >15 years that are economically active for each country in UN3 data")
 ```
 
 ## Model Fitting
