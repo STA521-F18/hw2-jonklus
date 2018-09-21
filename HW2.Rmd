@@ -31,6 +31,7 @@ library(dplyr)
 library(knitr)
 library(GGally)
 library(ggplot2)
+library(ggpubr)
 
 data(UN3, package="alr3")
 help(UN3) 
@@ -73,7 +74,13 @@ ggpairs(UN3)
 ```
 
 ```{r}
-ggplot(data = UN3, aes(x = Frate, y = ModernC)) + geom_point(na.rm = TRUE) + labs(title = "Contraceptive Use vs. Adult Female Economic Activity", caption = "% females using modern contraception plotted against % females >15 years that are economically active for each country in UN3 data")
+y_frate = ggplot(data = UN3, aes(x = Frate, y = ModernC)) + geom_point(na.rm = TRUE) + labs(title = "Contraceptive Use vs. Adult Female Economic Activity", caption = "% females using modern contraception plotted against % females >15 years that are economically active by country in UN3 data")
+
+y_purban = ggplot(data = UN3, aes(x = Purban, y = ModernC)) + geom_point(na.rm = TRUE) + labs(title = "Contraceptive Use vs. % Urban Pop", caption = "% females using modern contraception plotted against % of population that is urban by country in UN3 data")
+
+ggarrange(y_frate, y_purban, labels = c("A","B"), nrow = 2, ncol = 1)
+
+
 ```
 
 ## Model Fitting
@@ -81,12 +88,16 @@ ggplot(data = UN3, aes(x = Frate, y = ModernC)) + geom_point(na.rm = TRUE) + lab
 4.  Use the `lm()` function to perform a multiple linear regression with `ModernC` as the response and all other variables as the predictors, using the formula `ModernC ~ .`, where the `.` includes all remaining variables in the dataframe.  Create  diagnostic residual plot from the linear model object and comment on results regarding assumptions.  How many observations are used in your model fitting?
 
 ```{r}
-
+contra_lm = lm(ModernC ~ Change + PPgdp + Frate + Pop + Fertility + Purban, UN3)
+summary(contra_lm)
+plot(contra_lm)
+# ggarrange(diagnostics, labels = c("A","B","C","D"), ncol = 2, nrow = 2)
 ```
 
 5. Examine added variable plots `car::avPlot` or `car::avPlots`  for your model above. Are there any plots that suggest that transformations are needed for any of the terms in the model? Describe. Is it likely that any of the localities are influential for any of the terms?  Which localities?  Which terms?  
 
 ```{r}
+avPlots(contra_lm)
 
 ```
 
