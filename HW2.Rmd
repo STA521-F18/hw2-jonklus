@@ -1,6 +1,6 @@
 ---
 title: "HW2 STA521 Fall18"
-author: '[Jonathan Klus, jkk31 jonklus]'
+author: '[Jonathan Klus jkk31]'
 date: "Due September 23, 2018 5pm"
 output:
   pdf_document: default
@@ -43,11 +43,18 @@ help(UN3)
 ```{r}
 # quick summary - examine data types/structure
 str(UN3)
+```
 
+```{r}
 # check for missing data
 missing_data = is.na(UN3)
 summary(missing_data)
 ```
+
+Out of the seven variables in the UN3 data set, six are missing at least one
+data point. The only variable that is not missing data is Purban. 
+
+All of the variables in this data set are quantitative. 
 
 ```{r}
 summary(UN3)
@@ -91,8 +98,11 @@ ggarrange(y_frate, y_purban, labels = c("A","B"), nrow = 2, ncol = 1)
 contra_lm = lm(ModernC ~ Change + PPgdp + Frate + Pop + Fertility + Purban, UN3)
 summary(contra_lm)
 plot(contra_lm)
-# ggarrange(diagnostics, labels = c("A","B","C","D"), ncol = 2, nrow = 2)
 ```
+
+There were 125 observations used in this model fitting. That is calculated from
+df = 118, with 7 degrees of freedom lost to the estimation of the intercept and
+six coefficients (7 parameters). So n = 118 + 7 = 125. 
 
 5. Examine added variable plots `car::avPlot` or `car::avPlots`  for your model above. Are there any plots that suggest that transformations are needed for any of the terms in the model? Describe. Is it likely that any of the localities are influential for any of the terms?  Which localities?  Which terms?  
 
@@ -105,7 +115,7 @@ avPlots(contra_lm)
 
 
 ```{r}
-
+boxTidwell()
 ```
 
 7. Given the selected transformations of the predictors, select a transformation of the response using `MASS::boxcox` or `car::boxCox` and justify.
