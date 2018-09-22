@@ -65,17 +65,20 @@ kable(UN3_summary,"markdown",c(2,2),row.names = TRUE)
 highlighting the relationships among the predictors. Comment
 on your findings regarding trying to predict `ModernC` from the other variables.  Are there potential outliers, nonlinear relationships or transformations that appear to be needed based on your graphical EDA?
 
-```{r, echo = FALSE}
+```{r, echo = FALSE, warning = FALSE}
 # initial EDA
 ggpairs(UN3)
 ```
 
 ```{r}
-y_frate = ggplot(data = UN3, aes(x = Frate, y = ModernC)) + geom_point(na.rm = TRUE) + labs(title = "Contraceptive Use vs. Adult Female Economic Activity", caption = "% females using modern contraception plotted against % females >15 years that are economically active by country in UN3 data")
+y_frate = ggplot(data = UN3, aes(x = Frate, y = ModernC)) + geom_point(na.rm = TRUE) + 
+  labs(title = "Contraceptive Use vs. Adult Female Economic Activity")
 
-y_purban = ggplot(data = UN3, aes(x = Purban, y = ModernC)) + geom_point(na.rm = TRUE) + labs(title = "Contraceptive Use vs. % Urban Pop", caption = "% females using modern contraception plotted against % of population that is urban by country in UN3 data")
+y_purban = ggplot(data = UN3, aes(x = Purban, y = ModernC)) + geom_point(na.rm = TRUE) + 
+  labs(title = "Contraceptive Use vs. % Urban Pop")
 
-y_pop = ggplot(data = UN3, aes(x = Pop, y = ModernC)) + geom_point(na.rm = TRUE) + labs(title = "Contraceptive Use vs. Population", caption = "% females using modern contraception plotted against total population by country in UN3 data")
+y_pop = ggplot(data = UN3, aes(x = Pop, y = ModernC)) + geom_point(na.rm = TRUE) + 
+  labs(title = "Contraceptive Use vs. Population")
 
 ggarrange(y_frate, y_purban, y_pop, labels = c("A","B", "C"), nrow = 2, ncol = 2)
 #also try gridExtra::grid.arrange
@@ -83,7 +86,16 @@ ggarrange(y_frate, y_purban, y_pop, labels = c("A","B", "C"), nrow = 2, ncol = 2
 
 ```
 
-There are some noteable potential outliers. In the chart A, 
+There are some noteable potential issues in using this data to predict ModernC.
+In Chart A, there are potential outliers where countries have very high rates of
+females over age 15 who are economically active (Frate) but zero or near-zero
+percent use of modern contraception. In Chart B, the relationship between 
+percent urban population and use of modern contraception appears fairly linear.
+In Chart C, the Pop variable includes several extreme values, and it appears
+that the data would benefit from a log transformation to scale the values
+more appropriately. The two most extreme values, China and India, would likely
+be considered outliers.
+
 ## Model Fitting
 
 4.  Use the `lm()` function to perform a multiple linear regression with `ModernC` as the response and all other variables as the predictors, using the formula `ModernC ~ .`, where the `.` includes all remaining variables in the dataframe.  Create  diagnostic residual plot from the linear model object and comment on results regarding assumptions.  How many observations are used in your model fitting?
@@ -113,34 +125,70 @@ from the majority of the data.
 
 
 ```{r}
-boxTidwell(ModernC ~ PPgdp + Pop + Fertility, ~Change + Purban, UN3_clean)
+boxTidwell(ModernC ~ PPgdp + Pop + Fertility, ~Change + Purban + Frate, UN3_clean)
 ```
 ```{r}
-boxTidwell(ModernC ~ PPgdp + Pop + Fertility, ~Change + Purban, UN3_clean)
+boxTidwell(ModernC ~ PPgdp + Fertility + Pop, ~Change + Frate + Purban, UN3_clean)
+boxTidwell(ModernC ~ PPgdp + Pop , ~Change + Frate + Fertility + Purban, UN3_clean)
+```
+
+```{r}
+boxTidwell(ModernC ~ Frate + Fertility , ~log(PPgdp) + log(Pop) + Change + Purban, UN3_clean)
 ```
 
 7. Given the selected transformations of the predictors, select a transformation of the response using `MASS::boxcox` or `car::boxCox` and justify.
 
+The Box-Cox tests both produce a MLE for lambda near zero, which suggests that
+a log transformation may be appropriate. The scatterplot for ModernC vs. Pop
+suggests that the scaling may be improved by a log transformation. The Box Cox
+suggests that the response variable should remain level. 
 
 ```{r}
+ggplot(UN3_clean,aes(x=log(Pop), y=ModernC))+geom_point() + geom_smooth(method="lm")
+ggplot(UN3_clean,aes(x=log(PPgdp), y=ModernC))+geom_point() + geom_smooth(method="lm")
+```
 
+
+```{r}
+contra_lm_Xtransf = lm(ModernC ~ log(PPgdp) + log(Pop) + Fertility + Change + Frate + Purban, UN3_clean)
+summary(contra_lm_Xtransf)
+plot(contra_lm_Xtransf)
+
+boxCox(contra_lm_Xtransf)
 ```
 
 8.  Fit the regression using the transformed variables.  Provide residual plots and added variables plots and comment.  If you feel that you need additional transformations of either the response or predictors, repeat any steps until you feel satisfied.
+```{r}
+avPlots(contra_lm_Xtransf)
+```
+
+The transformed model is specified and plotted above. The transformations have especially
+helped to scale some of the observations that appeared to be potentially influential. 
+Based on the slope of the added variable plot for Purban, it does not appear to be 
+contributing much additional information to the model. 
 
 9. Start by finding the best transformation of the response and then find transformations of the predictors.  Do you end up with a different model than in 8?
 
 
 ```{r}
-
+boxCox(contra_lm)
 ```
+
+By changing the order in which we perform Box Cox and Box Tidwell, we do end up
+with the same suggested model as in the previous example. This is because the 
+Box Cox procedure has a maximum likelihood of approximatey 3/4, and an interval 
+that includes 1. Therefore we elect not to transform the response. The result
+of Box Tidwell is then the same as in #6 above. 
 
 10.  Are there any outliers or influential points in the data?  Explain.  If so, refit the model after removing any outliers and comment on residual plots.
 
-
 ```{r}
-
+outlierTest(contra_lm_Xtransf)
 ```
+
+There do not appear to be any outliers remaining in the model. The test for
+outliers (with Bonferroni correction for multiple testing) does not return 
+any points with p < 0.05. 
 
 ## Summary of Results
 
@@ -148,22 +196,28 @@ boxTidwell(ModernC ~ PPgdp + Pop + Fertility, ~Change + Purban, UN3_clean)
 
 
 ```{r}
-
+CI = confint(contra_lm_Xtransf)
+CI_w_coeff = data.frame(contra_lm_Xtransf$coefficients,CI[,1],CI[,2])
+kable(CI_w_coeff,'markdown',c(2,2,2),row.names = TRUE, col.names = c("Coeff","Lower","Upper"))
 ```
-
+- Intercept: When all predictors are 0, a country is predicted to have 4.12 ModernC. 
+- log(PPgdp): A 1% increase in PPgdp is associated with a .055 unit increase in ModernC. 
+- log(Pop):
+- Fertility:
+- Change:
+- Frate:
+- Purban: 
 
 12. Provide a paragraph summarizing your final model  and findings suitable for the US envoy to the UN after adjusting for outliers or influential points.   You should provide a justification for any case deletions in your final model
 
-
-```{r}
-
-```
-
+The final version of this model uses 
 
 ## Methodology
 
     
-13. Prove that the intercept in the added variable scatter plot will always be zero.  _Hint:  use the fact that if $H$ is the project matrix which contains a column of ones, then $1_n^T (I - H) = 0$.  Use this to show that the sample mean of residuals will always be zero if there is an intercept._
+13. Prove that the intercept in the added variable scatter plot will always be zero.  _Hint:  use the fact that if $H$ is the project matrix which contains a column of ones, then $1_n^T (I - H) = 0$.  Use this to show that the sample mean of residuals will always be zero if there is an intercept.
+
+
 
 
 14. For multiple regression with more than 2 predictors, say a full model given by `Y ~ X1 + X2 + ... Xp`   we create the added variable plot for variable `j` by regressing `Y` on all of the `X`'s except `Xj` to form `e_Y` and then regressing `Xj` on all of the other X's to form `e_X`.  Confirm that the slope in a manually constructed added variable plot for one of the predictors  in Ex. 10 is the same as the estimate from your model. 
