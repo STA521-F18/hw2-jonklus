@@ -1,7 +1,7 @@
 ---
 title: "HW2 STA521 Fall18"
-author: '[Jonathan Klus jkk31]'
-date: "Due September 23, 2018 5pm"
+author: "Jonathan Klus jkk31"
+date: "September 21, 2018"
 output:
   pdf_document: default
   html_document:
@@ -12,12 +12,7 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-This exercise involves the UN data set from `alr3` package. Install `alr3` and the `car` packages and load the data to answer the following questions adding your code in the code chunks.  Please add appropriate code to the chunks to suppress messages and warnings as needed once you are sure the code is working properly and remove instructions if no longer needed. Figures should have informative captions. Please switch the output to pdf for your final version to upload to Sakai. **Remove these instructions for final submission**
-
-
 ## Exploratory Data Analysis
-
-0.  Preliminary read in the data.  After testing, modify the code chunk so that output, messages and warnings are suppressed.  *Exclude text from final*
 
 ```{r data, echo = FALSE, include = FALSE}
 library(alr3)
@@ -58,7 +53,7 @@ summary(UN3)
 2. What is the mean and standard deviation of each quantitative predictor?  Provide in a nicely formatted table.
 
 ```{r}
-UN3_num = select(UN3,c(Change,PPgdp,Frate,Pop,Fertility,Purban))
+UN3_num = select(UN3,c(ModernC,Change,PPgdp,Frate,Pop,Fertility,Purban))
 UN3_mean = apply(UN3_num,2,mean,na.rm=TRUE)
 UN3_sd = apply(UN3_num,2,sd,na.rm=TRUE)
 UN3_summary = data.frame(mean = UN3_mean, sd= UN3_sd)
@@ -80,16 +75,21 @@ y_frate = ggplot(data = UN3, aes(x = Frate, y = ModernC)) + geom_point(na.rm = T
 
 y_purban = ggplot(data = UN3, aes(x = Purban, y = ModernC)) + geom_point(na.rm = TRUE) + labs(title = "Contraceptive Use vs. % Urban Pop", caption = "% females using modern contraception plotted against % of population that is urban by country in UN3 data")
 
-ggarrange(y_frate, y_purban, labels = c("A","B"), nrow = 2, ncol = 1)
+y_pop = ggplot(data = UN3, aes(x = Pop, y = ModernC)) + geom_point(na.rm = TRUE) + labs(title = "Contraceptive Use vs. Population", caption = "% females using modern contraception plotted against total population by country in UN3 data")
+
+ggarrange(y_frate, y_purban, y_pop, labels = c("A","B", "C"), nrow = 2, ncol = 2)
+#also try gridExtra::grid.arrange
 
 
 ```
 
+There are some noteable potential outliers. In the chart A, 
 ## Model Fitting
 
 4.  Use the `lm()` function to perform a multiple linear regression with `ModernC` as the response and all other variables as the predictors, using the formula `ModernC ~ .`, where the `.` includes all remaining variables in the dataframe.  Create  diagnostic residual plot from the linear model object and comment on results regarding assumptions.  How many observations are used in your model fitting?
 
 ```{r}
+UN3_clean = na.omit(UN3)
 contra_lm = lm(ModernC ~ Change + PPgdp + Frate + Pop + Fertility + Purban, UN3)
 summary(contra_lm)
 plot(contra_lm)
@@ -106,13 +106,17 @@ avPlots(contra_lm)
 ```
 
 The plot for population with all other variables held constant has points for 
-India and China that are highly suspect as 
+India and China that are very likely influential points and outliers. They are 
+from the majority of the data. 
 
 6.  Using the Box-Tidwell  `car::boxTidwell` or graphical methods find appropriate transformations of the predictor variables to be used as predictors in the linear model.  If any predictors are negative, you may need to transform so that they are non-negative.  Describe your method and  the resulting transformations.
 
 
 ```{r}
-#boxTidwell()
+boxTidwell(ModernC ~ PPgdp + Pop + Fertility, ~Change + Purban, UN3_clean)
+```
+```{r}
+boxTidwell(ModernC ~ PPgdp + Pop + Fertility, ~Change + Purban, UN3_clean)
 ```
 
 7. Given the selected transformations of the predictors, select a transformation of the response using `MASS::boxcox` or `car::boxCox` and justify.
