@@ -81,9 +81,6 @@ y_pop = ggplot(data = UN3, aes(x = Pop, y = ModernC)) + geom_point(na.rm = TRUE)
   labs(title = "Contraceptive Use vs. Population")
 
 ggarrange(y_frate, y_purban, y_pop, labels = c("A","B", "C"), nrow = 2, ncol = 2)
-#also try gridExtra::grid.arrange
-
-
 ```
 
 There are some noteable potential issues in using this data to predict ModernC.
@@ -104,7 +101,6 @@ be considered outliers.
 UN3_clean = na.omit(UN3)
 contra_lm = lm(ModernC ~ Change + PPgdp + Frate + Pop + Fertility + Purban, UN3)
 summary(contra_lm)
-#par(mfrow=c(2,2))
 plot(contra_lm)
 ```
 
@@ -180,8 +176,9 @@ suggests that the scaling would not be improved by a log transformation. The Box
 suggests that the response variable should remain level. 
 
 ```{r}
-ggplot(UN3_clean,aes(x=log(Pop), y=ModernC))+geom_point() + geom_smooth(method="lm")
-ggplot(UN3_clean,aes(x=log(Pop), y=log(ModernC)))+geom_point() + geom_smooth(method="lm")
+level_log = ggplot(UN3_clean,aes(x=log(Pop), y=ModernC))+geom_point() + geom_smooth(method="lm")
+log_log = ggplot(UN3_clean,aes(x=log(Pop), y=log(ModernC)))+geom_point() + geom_smooth(method="lm")
+ggarrange(level_log, log_log, labels = c("A","B"), nrow = 1, ncol = 2)
 ```
 
 
@@ -242,10 +239,11 @@ this test.
 11. For your final model, provide summaries of coefficients with 95% confidence intervals in a nice table with interpretations of each coefficient.  These should be in terms of the original units! 
 
 
-```{r}
+```{r, include=FALSE}
 CI = confint(contra_lm_Xtransf)
 CI_w_coeff = data.frame(contra_lm_Xtransf$coefficients,CI[,1],CI[,2])
-kable(CI_w_coeff,'markdown',c(2,2,2),row.names = TRUE, col.names = c("Coeff","Lower","Upper"), align = "c", 
+kable(CI_w_coeff,'markdown',c(2,2,2),row.names = TRUE, 
+      col.names = c("Coeff","Lower","Upper"), align = "c", 
       caption = "Model coefficients and their 95% confidence intervals.")
 ```
 - Intercept: When all predictors are 0, a country is predicted to have 4.12 percentage of unmarried women using modern contraception. This parameter estimate has little meaning, since a country with such characteristics would not be realistic. 
@@ -257,9 +255,8 @@ kable(CI_w_coeff,'markdown',c(2,2,2),row.names = TRUE, col.names = c("Coeff","Lo
 
 12. Provide a paragraph summarizing your final model  and findings suitable for the US envoy to the UN after adjusting for outliers or influential points.   You should provide a justification for any case deletions in your final model
 
-The final model is:
-ModernC = 4.10 + (4.86)log(PPgdp) + (1.44)log(Pop) - (9.28)Fertility + 
-(4.70)Change + (0.20)Frate
+The final model is:\\
+ModernC = 4.10 + (4.86)log(PPgdp) + (1.44)log(Pop) - (9.28)Fertility + (4.70)Change + (0.20)Frate
 
 This model seeks to predict the rate of usage of modern contraceptive techniques by unmarried women using data on per capita GDP (PPgdp), population size (Pop), number of births per female (Fertility), annual population growth rate (Change), and the 
 percentage of females over age 15 who are economically active (Frate). These data were obtained from the UN3 data set of 
@@ -286,7 +283,8 @@ Begin with the equation for the added variable plot:
 (I-H)Y = \hat{\beta_0} + \hat{\beta_1}(I-H)X\\
 \text{we know that } H = x(X^TX)^{-1}x^T, \text{and }\hat{\beta_1} = (X^TX)^{-1}x^TY\\
 (I-H)Y = \hat{\beta_0}\textbf{1} + \left[x^T(I-H)(I-H)x\right]^{-1}\left[(I-H)x\right]^T(I-H)Y(I-H)x\\
-\text{we know that H is a projection matrix and is therefore idempotent, so I-H is also idempotent: } (I-H)(I-H)=(I-H)\\
+\text{we know that H is a projection matrix and is therefore idempotent,}\\
+\text{so I-H is also idempotent: } (I-H)(I-H)=(I-H)\\
 (I-H)Y = \hat{\beta_0}\textbf{1} + \left[x^T(I-H)x\right]^{-1}\left[(I-H)x\right]^T(I-H)Y(I-H)x\\
 x^T(I-H)Y = x^T\hat{\beta_0}\textbf{1} + x^T\left[x^T(I-H)x\right]^{-1}\left[(I-H)x\right]^T(I-H)Y(I-H)x\\
 x^T(I-H)Y = x^T\hat{\beta_0}\textbf{1} + x^T(I-H)x\left[x^T(I-H)x\right]^{-1}x^T(I-H)Y\\
