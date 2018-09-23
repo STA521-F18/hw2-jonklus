@@ -149,26 +149,44 @@ graphical appearance in the added variable plots above.
 ```{r}
 boxTidwell(ModernC ~ PPgdp + Pop + Fertility, ~Change + Purban + Frate, UN3_clean)
 ```
+Based on a combination of the results of the Box-Tidwell (above), and an 
+examination of the initial added variable plots, we elect to make two 
+transformations: log(PPgdp), since lambda is near zero, and log(Pop),
+since log transformation may help to moderate the scale of some of the 
+outliers in the scatterplot. 
 
 ```{r}
-boxTidwell(ModernC ~ Frate + Fertility , ~log(PPgdp) + log(Pop) + Change + Purban, UN3_clean)
+summary(lm(ModernC~Change+log(PPgdp)+Frate+log(Pop)+Fertility+Purban,UN3_clean))
 ```
+The initial summary of this model with transformed predictors appears
+reasonable, but Purban does not appear to be adding much to the model.
+So we will drop this variable and perform another iteration of Box-Tidwell
+to consider any additional transformations. 
+
+```{r}
+boxTidwell(ModernC ~ Fertility , ~ Frate + log(PPgdp) + log(Pop) + Change, UN3_clean)
+```
+
+This iteration suggests further transformation Fertility using a power of 3/2. 
+This is not a transformation that would be easy to interpret, so we will leave
+Fertility level for now, but consider a transformation once we have performed
+additional diagnostics. 
 
 7. Given the selected transformations of the predictors, select a transformation of the response using `MASS::boxcox` or `car::boxCox` and justify.
 
-The Box-Cox tests both produce a MLE for lambda near zero, which suggests that
-a log transformation may be appropriate. The scatterplot for ModernC vs. Pop
-suggests that the scaling may be improved by a log transformation. The Box Cox
+The Box-Cox tests both produce a MLE for lambda near one, which suggests that
+we should not transform the response. The scatterplot for ModernC vs. Pop
+suggests that the scaling would not be improved by a log transformation. The Box Cox
 suggests that the response variable should remain level. 
 
 ```{r}
 ggplot(UN3_clean,aes(x=log(Pop), y=ModernC))+geom_point() + geom_smooth(method="lm")
-ggplot(UN3_clean,aes(x=log(PPgdp), y=ModernC))+geom_point() + geom_smooth(method="lm")
+ggplot(UN3_clean,aes(x=log(Pop), y=log(ModernC)))+geom_point() + geom_smooth(method="lm")
 ```
 
 
 ```{r}
-contra_lm_Xtransf = lm(ModernC ~ log(PPgdp) + log(Pop) + Fertility + Change + Frate + Purban, UN3_clean)
+contra_lm_Xtransf = lm(ModernC ~ log(PPgdp) + log(Pop) + Fertility + Change + Frate, UN3_clean)
 summary(contra_lm_Xtransf)
 plot(contra_lm_Xtransf)
 
@@ -182,8 +200,17 @@ avPlots(contra_lm_Xtransf)
 
 The transformed model is specified and plotted above. The transformations have especially
 helped to scale some of the observations that appeared to be potentially influential. 
+
+The diagnostic plots appear to line up reasonably with the assumptions for linear 
+regression. The Residuals vs. Fitted and Scale-Location plot appear to show a reasonable
+degree of homoskedasticity, and are centered about zero. There are some potential outliers 
+(i.e. Poland,Cook Islands, Azerbijan). The Normal Q-Q plot shows reasonable adherence of the
+residuals to the standard normal distribution, and the Residuals vs. Leverage plot does not
+indicate any high leverage points. 
+
 Based on the slope of the added variable plot for Purban, it does not appear to be 
-contributing much additional information to the model. 
+contributing much additional information to the model. Its p-value is also high in the
+diagnostics above (#7). 
 
 9. Start by finding the best transformation of the response and then find transformations of the predictors.  Do you end up with a different model than in 8?
 
@@ -206,7 +233,9 @@ outlierTest(contra_lm_Xtransf)
 
 There do not appear to be any outliers remaining in the model. The test for
 outliers (with Bonferroni correction for multiple testing) does not return 
-any points with p < 0.05. 
+any points with p < 0.05. Poland is the observation that is closest to
+being identified as an outlier, but still does not meet the threshold set by
+this test.
 
 ## Summary of Results
 
@@ -216,19 +245,21 @@ any points with p < 0.05.
 ```{r}
 CI = confint(contra_lm_Xtransf)
 CI_w_coeff = data.frame(contra_lm_Xtransf$coefficients,CI[,1],CI[,2])
-kable(CI_w_coeff,'markdown',c(2,2,2),row.names = TRUE, col.names = c("Coeff","Lower","Upper"))
+kable(CI_w_coeff,'markdown',c(2,2,2),row.names = TRUE, col.names = c("Coeff","Lower","Upper"), align = "c", 
+      caption = "Model coefficients and their 95% confidence intervals.")
 ```
 - Intercept: When all predictors are 0, a country is predicted to have 4.12 ModernC. 
-- log(PPgdp): A 1% increase in PPgdp is associated with a .055 unit increase in ModernC. 
-- log(Pop):
-- Fertility:
-- Change:
-- Frate:
-- Purban: 
+- log(PPgdp): A 1% increase in per capita GDP (in US dollars) is associated with a .049 unit increase in the percentage of unmarried women using modern contraception. 
+- log(Pop): A 1% increase in a country's population (in thousands) is associated with a .014 unit increase in the percentage of unmarried women using modern contraception. 
+- Fertility: A 1 unit increase in the number of expected live births per female is associated with a 9.28 unit decrease in the percentage of unmarried women using modern contraception. 
+- Change: A 1 unit increase in a country's annual population growth rate (as a percentage) is associated with a 4.7 unit increase in the percentage of unmarried women using modern contraception. 
+- Frate: A 1 unit increase in the percentage of females aged 15 and older who are economically active is associated with a 0.2 unit increase in the percentage of unmarried women using modern contraception. 
 
 12. Provide a paragraph summarizing your final model  and findings suitable for the US envoy to the UN after adjusting for outliers or influential points.   You should provide a justification for any case deletions in your final model
 
-The final version of this model uses 
+The final model is:
+ModernC = $\hat{\beta_0} + \hat{\beta_1}(\text{log(PPgdp)}) + \hat{\beta_2}(\text{log(Pop)}) + \hat{\beta_3}(\text{Fertility}) + 
++ \hat{\beta_4}(\text{Change}) + \hat{\beta_5}(\text{Frate})\\$
 
 ## Methodology
 
