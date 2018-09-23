@@ -172,8 +172,10 @@ additional diagnostics.
 
 The Box-Cox tests both produce a MLE for lambda near one, which suggests that
 we should not transform the response. The scatterplot for ModernC vs. Pop
-suggests that the scaling would not be improved by a log transformation. The Box Cox
-suggests that the response variable should remain level. 
+suggests that the scaling might be improved by a log transformation. However,
+this takes into account the relationship of the response with only one predictor.
+The Box Cox (which accounts for all predictors)suggests that the response variable 
+should remain level. 
 
 ```{r}
 level_log = ggplot(UN3_clean,aes(x=log(Pop), y=ModernC))+geom_point() + geom_smooth(method="lm")
@@ -300,14 +302,17 @@ x^T\hat{\beta_0}\textbf{1} = 0\\
 14. For multiple regression with more than 2 predictors, say a full model given by `Y ~ X1 + X2 + ... Xp`   we create the added variable plot for variable `j` by regressing `Y` on all of the `X`'s except `Xj` to form `e_Y` and then regressing `Xj` on all of the other X's to form `e_X`.  Confirm that the slope in a manually constructed added variable plot for one of the predictors  in Ex. 10 is the same as the estimate from your model. 
 
 ```{r}
-Y = lm(ModernC ~ Frate, UN3_clean)
+# Added variable: Frate
+
+Y = lm(ModernC ~ log(PPgdp) + log(Pop) + Fertility + Change, UN3_clean)
 e_Y = residuals(Y)
 
 X1 = lm(Frate ~ log(PPgdp) + log(Pop) + Fertility + Change, UN3_clean)
 e_X1 = residuals(X1)
 
 AV_lm = lm(e_Y ~ e_X1)
-summary(AV_lm)
+summary(AV_lm)$coefficients
 
 ```
-
+We obtain the coefficient (slope) 0.2 for the added variable plot, which is the same as the coefficient
+obtained for Frate in the full model as summarized in the table for question 11. 
