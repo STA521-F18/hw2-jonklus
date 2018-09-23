@@ -1,7 +1,7 @@
 ---
 title: "HW2 STA521 Fall18"
 author: "Jonathan Klus jkk31"
-date: "September 21, 2018"
+date: "September 23, 2018"
 output:
   pdf_document: default
   html_document:
@@ -89,7 +89,7 @@ ggarrange(y_frate, y_purban, y_pop, labels = c("A","B", "C"), nrow = 2, ncol = 2
 There are some noteable potential issues in using this data to predict ModernC.
 In Chart A, there are potential outliers where countries have very high rates of
 females over age 15 who are economically active (Frate) but zero or near-zero
-percent use of modern contraception. In Chart B, the relationship between 
+percent use of modern contraception by unmarried women. In Chart B, the relationship between 
 percent urban population and use of modern contraception appears fairly linear.
 In Chart C, the Pop variable includes several extreme values, and it appears
 that the data would benefit from a log transformation to scale the values
@@ -104,12 +104,28 @@ be considered outliers.
 UN3_clean = na.omit(UN3)
 contra_lm = lm(ModernC ~ Change + PPgdp + Frate + Pop + Fertility + Purban, UN3)
 summary(contra_lm)
+#par(mfrow=c(2,2))
 plot(contra_lm)
 ```
 
 There were 125 observations used in this model fitting. That is calculated from
 df = 118, with 7 degrees of freedom lost to the estimation of the intercept and
 six coefficients (7 parameters). So n = 118 + 7 = 125. 
+
+The diagnostic plots indicate:
+- Residuals vs. Fitted Values: There are a few potential outliers, notably Poland,
+Azerbijan, and the Cook Islands. The model generally appears to meet the 
+homoskedasticity assumption, though the presence of fewer fitted values with 
+smaller residuals towards the lower end of the y axis may make justify 
+some concern about heteroskedacity. 
+- Normal Q-Q: The residuals generally adhere to the normal assumption, with 
+some deviation in the upper tail. 
+- Scale-Location: The standardized residuals are not unduly large (i.e. no 
+observations >2), but there does appear to be some pattern to the residuals
+(i.e. smaller fitted values having smaller residuals than larger fitted values).
+This pattern is not extreme, but may be cause for concern as we consider 
+transformations for the final model (i.e. should we log transform the response
+to try and control what appears to be a mild case of heteroskedasticity?)
 
 5. Examine added variable plots `car::avPlot` or `car::avPlots`  for your model above. Are there any plots that suggest that transformations are needed for any of the terms in the model? Describe. Is it likely that any of the localities are influential for any of the terms?  Which localities?  Which terms?  
 
@@ -119,17 +135,19 @@ avPlots(contra_lm)
 
 The plot for population with all other variables held constant has points for 
 India and China that are very likely influential points and outliers. They are 
-from the majority of the data. 
+from the mean of the data and appear to influence the slope of the regression line.
+Both Pop and PPgdp may benefit from a log transformation, as their data is quite
+spread out.
 
 6.  Using the Box-Tidwell  `car::boxTidwell` or graphical methods find appropriate transformations of the predictor variables to be used as predictors in the linear model.  If any predictors are negative, you may need to transform so that they are non-negative.  Describe your method and  the resulting transformations.
+
+Here, the Box-Tidwell method is performed on the three variables that appear
+that they may benefit most from a possible transformation, based upon their
+graphical appearance in the added variable plots above. 
 
 
 ```{r}
 boxTidwell(ModernC ~ PPgdp + Pop + Fertility, ~Change + Purban + Frate, UN3_clean)
-```
-```{r}
-boxTidwell(ModernC ~ PPgdp + Fertility + Pop, ~Change + Frate + Purban, UN3_clean)
-boxTidwell(ModernC ~ PPgdp + Pop , ~Change + Frate + Fertility + Purban, UN3_clean)
 ```
 
 ```{r}
