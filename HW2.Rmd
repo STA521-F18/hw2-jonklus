@@ -248,7 +248,7 @@ CI_w_coeff = data.frame(contra_lm_Xtransf$coefficients,CI[,1],CI[,2])
 kable(CI_w_coeff,'markdown',c(2,2,2),row.names = TRUE, col.names = c("Coeff","Lower","Upper"), align = "c", 
       caption = "Model coefficients and their 95% confidence intervals.")
 ```
-- Intercept: When all predictors are 0, a country is predicted to have 4.12 ModernC. 
+- Intercept: When all predictors are 0, a country is predicted to have 4.12 percentage of unmarried women using modern contraception. This parameter estimate has little meaning, since a country with such characteristics would not be realistic. 
 - log(PPgdp): A 1% increase in per capita GDP (in US dollars) is associated with a .049 unit increase in the percentage of unmarried women using modern contraception. 
 - log(Pop): A 1% increase in a country's population (in thousands) is associated with a .014 unit increase in the percentage of unmarried women using modern contraception. 
 - Fertility: A 1 unit increase in the number of expected live births per female is associated with a 9.28 unit decrease in the percentage of unmarried women using modern contraception. 
@@ -258,15 +258,58 @@ kable(CI_w_coeff,'markdown',c(2,2,2),row.names = TRUE, col.names = c("Coeff","Lo
 12. Provide a paragraph summarizing your final model  and findings suitable for the US envoy to the UN after adjusting for outliers or influential points.   You should provide a justification for any case deletions in your final model
 
 The final model is:
-ModernC = $\hat{\beta_0} + \hat{\beta_1}(\text{log(PPgdp)}) + \hat{\beta_2}(\text{log(Pop)}) + \hat{\beta_3}(\text{Fertility}) + 
-+ \hat{\beta_4}(\text{Change}) + \hat{\beta_5}(\text{Frate})\\$
+ModernC = 4.10 + (4.86)log(PPgdp) + (1.44)log(Pop) - (9.28)Fertility + 
+(4.70)Change + (0.20)Frate
+
+This model seeks to predict the rate of usage of modern contraceptive techniques by unmarried women using data on per capita GDP (PPgdp), population size (Pop), number of births per female (Fertility), annual population growth rate (Change), and the 
+percentage of females over age 15 who are economically active (Frate). These data were obtained from the UN3 data set of 
+observations from 210 countries. Since many of these observations did not contain complete data, only 125 of these observations
+were usable. No observations were removed for reasons other than missing data. 
+
+The interpretation of this model is that, given the usable observations from the UN3 data set, we can identify several 
+associations about the use rate of modern contraceptives by women in a country with certain characteristics. In this model,
+for example, when we account for the other five variables used, a 10% increase in a country's per capita GDP (in US dollars) is associated with an approximately 0.5 unit increase in the percentage of unmarried women using modern contraception. So all else
+equal, a country where ModernC = 40% would be predicted to see this increase to 40.5% given a 10% increase in per capita GDP. 
+A 10% increase in a country's population (in thousands) is associated with a .14 unit increase in the percentage of unmarried women using modern contraception. Manipulation of these first two variables does not produce dramatic changes in contraception use by unmarried women. A 1 unit increase in the number of expected live births per female is associated with a 9.28 unit decrease in the percentage of unmarried women using modern contraception. A 1 unit increase in a country's annual population growth rate (as a percentage) is associated with a 4.7 unit increase in the percentage of unmarried women using modern contraception. This result
+may be the most surprising, that an increase in population growth rate was associated with increased contraceptive use. This may be an interesting point for further investigation and more comprehensive data collection to judge the merits of this association. Finally, a 10 unit increase in the percentage of females aged 15 and older who are economically active is associated with a 2 unit increase in the percentage of unmarried women using modern contraception. Each of these relationships is interpreted with the others held fixed, and taken together, allows us to present a model to estimate the use of modern contraceptive use by unmarried
+women. This model's greatest shortcoming is the lack of complete data for 85 countries in the data set, which forced us to 
+exclude those results from the model. With more complete data, this model would become more generalizable to all countries. 
 
 ## Methodology
 
     
 13. Prove that the intercept in the added variable scatter plot will always be zero.  _Hint:  use the fact that if $H$ is the project matrix which contains a column of ones, then $1_n^T (I - H) = 0$.  Use this to show that the sample mean of residuals will always be zero if there is an intercept.
 
-
-
+Begin with the equation for the added variable plot:
+\begin{gather*}
+\hat{e_{(y)}} = \hat{\beta_0} + \hat{\beta_1}\hat{e_{(x)}}\\
+(I-H)Y = \hat{\beta_0} + \hat{\beta_1}(I-H)X\\
+\text{we know that } H = x(X^TX)^{-1}x^T, \text{and }\hat{\beta_1} = (X^TX)^{-1}x^TY\\
+(I-H)Y = \hat{\beta_0}\textbf{1} + \left[x^T(I-H)(I-H)x\right]^{-1}\left[(I-H)x\right]^T(I-H)Y(I-H)x\\
+\text{we know that H is a projection matrix and is therefore idempotent, so I-H is also idempotent: } (I-H)(I-H)=(I-H)\\
+(I-H)Y = \hat{\beta_0}\textbf{1} + \left[x^T(I-H)x\right]^{-1}\left[(I-H)x\right]^T(I-H)Y(I-H)x\\
+x^T(I-H)Y = x^T\hat{\beta_0}\textbf{1} + x^T\left[x^T(I-H)x\right]^{-1}\left[(I-H)x\right]^T(I-H)Y(I-H)x\\
+x^T(I-H)Y = x^T\hat{\beta_0}\textbf{1} + x^T(I-H)x\left[x^T(I-H)x\right]^{-1}x^T(I-H)Y\\
+x^T(I-H)Y = x^T\hat{\beta_0}\textbf{1} + x^T(I-H)Y\\
+x^T\hat{\beta_0}\textbf{1} = 0\\
+\underbrace{(1xn)(nx1)}_{scalar}(nx1)\\
+\text{So either $x^T$ or $\hat{\beta_0}$ is zero.}\\
+\text{If $x^T = 0$ then all coefficients for the model above would be zero}\\
+\text{(i.e. we would have no model, since $\hat{\beta_1} = (X^TX)^{-1}x^TY$)}\\
+\text{Therefore $\hat{\beta_0} = 0$.}
+\end{gather*}
 
 14. For multiple regression with more than 2 predictors, say a full model given by `Y ~ X1 + X2 + ... Xp`   we create the added variable plot for variable `j` by regressing `Y` on all of the `X`'s except `Xj` to form `e_Y` and then regressing `Xj` on all of the other X's to form `e_X`.  Confirm that the slope in a manually constructed added variable plot for one of the predictors  in Ex. 10 is the same as the estimate from your model. 
+
+```{r}
+Y = lm(ModernC ~ Frate, UN3_clean)
+e_Y = residuals(Y)
+
+X1 = lm(Frate ~ log(PPgdp) + log(Pop) + Fertility + Change, UN3_clean)
+e_X1 = residuals(X1)
+
+AV_lm = lm(e_Y ~ e_X1)
+summary(AV_lm)
+
+```
+
